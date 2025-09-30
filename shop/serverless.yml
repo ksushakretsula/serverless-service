@@ -9,11 +9,117 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
+  environment:
+    PRODUCTS_TABLE: ProductsTable
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource: arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.PRODUCTS_TABLE}
 
 functions:
   hello_world:
     handler: handler.hello_world
     events:
-      - httpApi:
-          path: /hello_world
+      - http:
+          path: hello_world
           method: get
+  createProduct:
+    handler: product_handler.createProduct
+    events:
+      - http:
+          path: products
+          method: post
+          cors:
+            origin: 'http://localhost:3000'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+  getProduct:
+    handler: product_handler.getProduct
+    events:
+      - http:
+          path: products/{id}
+          method: get
+          cors:
+            origin: 'http://localhost:3000'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+  updateProduct:
+    handler: product_handler.updateProduct
+    events:
+      - http:
+          path: products/{id}
+          method: put
+          cors:
+            origin: 'http://localhost:3000'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+  deleteProduct:
+    handler: product_handler.deleteProduct
+    events:
+      - http:
+          path: products/{id}
+          method: delete
+          cors:
+            origin: 'http://localhost:3000'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+  listProducts:
+    handler: product_handler.listProducts
+    events:
+      - http:
+          path: products
+          method: get
+          cors:
+            origin: 'http://localhost:3000'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+
+resources:
+  Resources:
+    ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ProductsTable
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST

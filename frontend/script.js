@@ -1,0 +1,244 @@
+const API_BASE = "https://swbm3u0ur0.execute-api.us-east-1.amazonaws.com/dev/products";
+
+// Toast notification functions
+function showToast(message, type = 'success') {
+    const toast = document.getElementById(type === 'success' ? 'successToast' : 'errorToast');
+    const messageElement = document.getElementById('errorMessage');
+
+    if (type === 'error' && messageElement) {
+        messageElement.textContent = message;
+    }
+
+    toast.classList.add('show');
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Create product
+async function createProduct() {
+    try {
+        const product = {
+            name: document.getElementById("name").value.trim(),
+            price: Number(document.getElementById("price").value),
+            category: document.getElementById("category").value.trim(),
+            available: document.getElementById("available").checked
+        };
+
+        // Validation
+        if (!product.name) {
+            showToast('Product name is required', 'error');
+            document.getElementById("name").focus();
+            return;
+        }
+
+        if (!product.price || product.price <= 0) {
+            showToast('Valid price is required', 'error');
+            document.getElementById("price").focus();
+            return;
+        }
+
+        const res = await fetch(API_BASE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            showToast(`Error: ${error.error}`, 'error');
+            return;
+        }
+
+        // Clear form and show success
+        document.getElementById("name").value = '';
+        document.getElementById("price").value = '';
+        document.getElementById("category").value = '';
+        document.getElementById("available").checked = false;
+
+        showToast('Product created successfully!');
+        listProducts();
+
+    } catch (error) {
+        console.error('Error creating product:', error);
+        showToast('Failed to create product. Please try again.', 'error');
+    }
+}
+
+// List all products with editable name, price, category, and availability
+async function listProducts() {
+    try {
+        const container = document.getElementById("products");
+        container.innerHTML = `
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading products...</p>
+            </div>
+        `;
+
+        const res = await fetch(API_BASE);
+        const data = await res.json();
+        const products = data.items || data;
+        container.innerHTML = "";
+
+        if (!products || products.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📦</div>
+                    <h3>No products found</h3>
+                    <p>Create your first product to get started!</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Create table
+        const table = document.createElement("table");
+        table.className = "product-table";
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Price ($)</th>
+                    <th>Category</th>
+                    <th>Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        container.appendChild(table);
+        const tbody = table.querySelector("tbody");
+
+        products.forEach(product => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>
+                    <input type="text" id="name-${product.id}" value="${escapeHtml(product.name)}" class="input-field">
+                </td>
+                <td>
+                    <input type="number" id="price-${product.id}" value="${product.price}" class="input-field" min="0" step="0.01">
+                </td>
+                <td>
+                    <input type="text" id="category-${product.id}" value="${escapeHtml(product.category || '')}" class="input-field">
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" id="available-${product.id}" ${product.available ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </td>
+                <td>
+                    <button onclick='updateProduct("${product.id}")' class="btn update-btn">Update</button>
+                    <button onclick='deleteProduct("${product.id}")' class="btn delete-btn">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error("Error listing products:", error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">⚠️</div>
+                <h3>Error loading products</h3>
+                <p>Please check your connection and try again.</p>
+                <button onclick="listProducts()" class="btn primary" style="margin-top: 1rem;">
+                    ↻ Retry
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Update product now reads name, price, category, available
+async function updateProduct(id) {
+    try {
+        const product = {
+            name: document.getElementById(`name-${id}`).value.trim() || 'Unnamed Product',
+            price: Number(document.getElementById(`price-${id}`).value),
+            category: document.getElementById(`category-${id}`).value.trim(),
+            available: document.getElementById(`available-${id}`).checked
+        };
+
+        // Validation
+        if (!product.name) {
+            showToast('Product name is required', 'error');
+            return;
+        }
+        if (!product.price || product.price <= 0) {
+            showToast('Valid price is required', 'error');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to update product');
+        }
+
+        showToast('Product updated successfully!');
+        listProducts();
+
+    } catch (error) {
+        console.error('Error updating product:', error);
+        showToast('Failed to update product', 'error');
+    }
+}
+
+// Delete product
+async function deleteProduct(id) {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to delete product');
+        }
+
+        showToast('Product deleted successfully!');
+        listProducts();
+
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        showToast('Failed to delete product', 'error');
+    }
+}
+
+// Utility function to escape HTML
+function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Add enter key support for form
+document.addEventListener('DOMContentLoaded', function () {
+    // Enter key support for create form
+    const inputs = document.querySelectorAll('#name, #price, #category');
+    inputs.forEach(input => {
+        input.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                createProduct();
+            }
+        });
+    });
+
+    // Initial load
+    listProducts();
+});

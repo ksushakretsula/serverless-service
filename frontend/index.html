@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Shop UI - Product CRUD</h1>
+        </header>
+
+        <main class="main">
+            <!-- Add Product -->
+            <section class="card form-card flex-row">
+                <input type="text" id="name" placeholder="Product Name">
+                <input type="number" id="price" placeholder="Price ($)" min="0" step="0.01">
+                <input type="text" id="category" placeholder="Category">
+                <div class="toggle-wrapper">
+                    <label class="switch">
+                        <input type="checkbox" id="available">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Available</span>
+                </div>
+                <button onclick="createProduct()" class="btn primary">+ Add</button>
+            </section>
+
+            <!-- Product List -->
+            <section class="card product-list">
+                <div class="list-header">
+                    <h2>Products</h2>
+                    <button onclick="listProducts()" class="btn secondary">↻ Refresh</button>
+                </div>
+                <div id="products" class="products-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading products...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toasts -->
+    <div id="successToast" class="toast success">✔️ Operation successful!</div>
+    <div id="errorToast" class="toast error">⚠ <span id="errorMessage">An error occurred</span></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

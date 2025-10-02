@@ -13,7 +13,7 @@ provider:
   runtime: nodejs20.x
   region: us-east-1
   environment:
-    PRODUCTS_TABLE: ProductsTable
+    PRODUCTS_TABLE: ProductsTableV2
     JWT_SECRET: ${env:JWT_SECRET, 'super-secret-jwt-key-change-in-production'}
   iamRoleStatements:
     - Effect: Allow
@@ -137,14 +137,18 @@ functions:
 
 resources:
   Resources:
-    ProductsTable:
+    ProductsTableV2:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ProductsTable
+        TableName: ProductsTableV2
         AttributeDefinitions:
+          - AttributeName: category
+            AttributeType: S
           - AttributeName: id
             AttributeType: S
         KeySchema:
-          - AttributeName: id
+          - AttributeName: category # Partition key
             KeyType: HASH
+          - AttributeName: id       # Sort key
+            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST

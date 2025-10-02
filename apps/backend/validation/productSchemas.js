@@ -57,6 +57,8 @@ export const productIdSchema = Joi.object({
 export const queryParamsSchema = Joi.object({
     category: Joi.string().optional(),
     available: Joi.boolean().optional(),
-    minAvailable: Joi.number().min(0).optional(),
+    minAvailable: Joi.number().integer().min(0).optional().messages({
+        'number.base': '"minAvailable" must be a number'
+    }).prefs({ convert: true }),
     maxAvailable: Joi.number().min(0).optional()
 });

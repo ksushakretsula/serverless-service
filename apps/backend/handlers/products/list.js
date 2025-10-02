@@ -1,4 +1,4 @@
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "../../lib/dynamodb.js";
 import { successResponse, errorResponse } from "../../utils/responses.js";
 import { queryParamsSchema } from "../../validation/productSchemas.js";
@@ -10,54 +10,48 @@ export const listProducts = async (event) => {
     try {
         const queryParams = validateQueryParams(event);
 
-        let scanParams = { TableName: TABLE_NAME };
+        // If category is provided, using Query; otherwise fallback to Scan
+        if (queryParams.category) {
+            const params = {
+                TableName: TABLE_NAME,
+                KeyConditionExpression: "#cat = :category",
+                ExpressionAttributeNames: { "#cat": "category" },
+                ExpressionAttributeValues: { ":category": queryParams.category },
+            };
 
-        // Build filter expression if query parameters are provided
-        if (Object.keys(queryParams).length > 0) {
+            // Filter for availability range
             const filterExpressions = [];
-            const expressionAttributeValues = {};
-            const expressionAttributeNames = {};
+            const expressionAttributeValues = { ...params.ExpressionAttributeValues };
 
-            if (queryParams.category) {
-                filterExpressions.push('#cat = :category');
-                expressionAttributeNames['#cat'] = 'category';
-                expressionAttributeValues[':category'] = queryParams.category;
+            if (queryParams.available === true) filterExpressions.push("available > :minAvailable");
+            if (queryParams.available === false) {
+                filterExpressions.push("available = :zero");
+                expressionAttributeValues[":zero"] = 0;
             }
-
-            // Filter by available products (available > 0)
-            if (queryParams.available === true) {
-                filterExpressions.push('available > :minAvailable');
-                expressionAttributeValues[':minAvailable'] = 0;
-            } else if (queryParams.available === false) {
-                filterExpressions.push('available = :zero');
-                expressionAttributeValues[':zero'] = 0;
-            }
-
-            // Filter by minimum available quantity
             if (queryParams.minAvailable !== undefined) {
-                filterExpressions.push('available >= :minAvailable');
-                expressionAttributeValues[':minAvailable'] = queryParams.minAvailable;
+                filterExpressions.push("available >= :minAvailable");
+                expressionAttributeValues[":minAvailable"] = queryParams.minAvailable;
             }
-
-            // Filter by maximum available quantity
             if (queryParams.maxAvailable !== undefined) {
-                filterExpressions.push('available <= :maxAvailable');
-                expressionAttributeValues[':maxAvailable'] = queryParams.maxAvailable;
+                filterExpressions.push("available <= :maxAvailable");
+                expressionAttributeValues[":maxAvailable"] = queryParams.maxAvailable;
             }
 
             if (filterExpressions.length > 0) {
-                scanParams.FilterExpression = filterExpressions.join(' AND ');
-                scanParams.ExpressionAttributeValues = expressionAttributeValues;
-                if (Object.keys(expressionAttributeNames).length > 0) {
-                    scanParams.ExpressionAttributeNames = expressionAttributeNames;
-                }
+                params.FilterExpression = filterExpressions.join(" AND ");
+                params.ExpressionAttributeValues = expressionAttributeValues;
             }
+
+            const result = await docClient.send(new QueryCommand(params));
+            return successResponse(result.Items);
         }
 
-        const result = await docClient.send(new ScanCommand(scanParams));
-        return successResponse(result.Items);
+        // If no category, fallback to Scan (inefficient, but covers all products)
+        const scanParams = { TableName: TABLE_NAME };
+        const scanResult = await docClient.send(new ScanCommand(scanParams));
+        return successResponse(scanResult.Items);
     } catch (error) {
-        console.error('Error listing products:', error);
+        console.error("Error listing products:", error);
         return errorResponse(error);
     }
 };

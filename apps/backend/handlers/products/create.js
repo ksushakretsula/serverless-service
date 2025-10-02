@@ -13,9 +13,9 @@ export const createProduct = async (event) => {
 
         const item = {
             id: uuidv4(),
+            category: validatedData.category,
             name: validatedData.name,
             price: validatedData.price,
-            category: validatedData.category,
             available: validatedData.available ?? 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()

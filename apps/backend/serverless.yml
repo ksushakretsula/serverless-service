@@ -5,12 +5,16 @@ app: spacebring
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: shop
 
+plugins:
+  - serverless-plugin-monorepo
+
 provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
   environment:
     PRODUCTS_TABLE: ProductsTable
+    JWT_SECRET: ${env:JWT_SECRET, 'super-secret-jwt-key-change-in-production'}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -23,20 +27,39 @@ provider:
       Resource: arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.PRODUCTS_TABLE}
 
 functions:
+  jwtAuthorizer:
+    handler: authorizers/jwtAuthorizer.handler
+  generateToken:
+    handler: authorizers/generateToken.handler
+    events:
+      - http:
+          path: /auth/token
+          method: get
+          cors:
+            origin: "http://localhost:3000"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
   hello_world:
-    handler: handler.hello_world
+    handler: handlers/hello_world.hello_world
     events:
       - http:
           path: hello_world
           method: get
   createProduct:
-    handler: product_handler.createProduct
+    handler: handlers/products/create.createProduct
     events:
       - http:
           path: products
           method: post
+          authorizer: jwtAuthorizer
           cors:
-            origin: 'http://localhost:3000'
+            origin: "http://localhost:3000"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -46,13 +69,13 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: false
   getProduct:
-    handler: product_handler.getProduct
+    handler: handlers/products/get.getProduct
     events:
       - http:
           path: products/{id}
           method: get
           cors:
-            origin: 'http://localhost:3000'
+            origin: "http://localhost:3000"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -62,13 +85,14 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: false
   updateProduct:
-    handler: product_handler.updateProduct
+    handler: handlers/products/update.updateProduct
     events:
       - http:
           path: products/{id}
           method: put
+          authorizer: jwtAuthorizer
           cors:
-            origin: 'http://localhost:3000'
+            origin: "http://localhost:3000"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -78,13 +102,14 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: false
   deleteProduct:
-    handler: product_handler.deleteProduct
+    handler: handlers/products/delete.deleteProduct
     events:
       - http:
           path: products/{id}
           method: delete
+          authorizer: jwtAuthorizer
           cors:
-            origin: 'http://localhost:3000'
+            origin: "http://localhost:3000"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -94,13 +119,13 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: false
   listProducts:
-    handler: product_handler.listProducts
+    handler: handlers/products/list.listProducts
     events:
       - http:
           path: products
           method: get
           cors:
-            origin: 'http://localhost:3000'
+            origin: "http://localhost:3000"
             headers:
               - Content-Type
               - X-Amz-Date

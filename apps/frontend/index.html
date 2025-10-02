@@ -16,15 +16,9 @@
             <!-- Add Product -->
             <section class="card form-card flex-row">
                 <input type="text" id="name" placeholder="Product Name">
-                <input type="number" id="price" placeholder="Price ($)" min="0" step="0.01">
+                <input type="text" id="price" placeholder="Price ($)" inputmode="decimal" oninput="enforceNumeric(this, 2)">
                 <input type="text" id="category" placeholder="Category">
-                <div class="toggle-wrapper">
-                    <label class="switch">
-                        <input type="checkbox" id="available">
-                        <span class="slider"></span>
-                    </label>
-                    <span class="toggle-label">Available</span>
-                </div>
+                <input type="text" id="available" placeholder="Available Qty" inputmode="decimal" oninput="enforceNumeric(this, 3)">
                 <button onclick="createProduct()" class="btn primary">+ Add</button>
             </section>
 

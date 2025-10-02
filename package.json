@@ -1,0 +1,8 @@
+{
+  "name": "serverless-service-workspaces",
+  "version": "1.0.0",
+  "description": "Serverless Framework service with multiple apps using workspaces",
+  "workspaces": [
+    "apps/*"
+  ]
+}

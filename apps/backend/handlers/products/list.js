@@ -9,47 +9,90 @@ const validateQueryParams = validateQueryParameters(queryParamsSchema);
 export const listProducts = async (event) => {
     try {
         const queryParams = validateQueryParams(event);
+        let items = [];
 
-        // If category is provided, using Query; otherwise fallback to Scan
+        const filterExpressions = [];
+        const expressionAttributeValues = {};
+        const expressionAttributeNames = {};
+
+        // Filter by category
+        if (queryParams.category) {
+            expressionAttributeNames["#cat"] = "category";
+            expressionAttributeValues[":category"] = queryParams.category;
+            filterExpressions.push("#cat = :category");
+        }
+
+        // Filter by name (contains, case-insensitive)
+        if (queryParams.name) {
+            filterExpressions.push("contains(#name, :name)");
+            expressionAttributeNames["#name"] = "name";
+            expressionAttributeValues[":name"] = queryParams.name;
+        }
+
+        // Filter by price range
+        if (queryParams.minPrice !== undefined) {
+            filterExpressions.push("price >= :minPrice");
+            expressionAttributeValues[":minPrice"] = Number(queryParams.minPrice);
+        }
+        if (queryParams.maxPrice !== undefined) {
+            filterExpressions.push("price <= :maxPrice");
+            expressionAttributeValues[":maxPrice"] = Number(queryParams.maxPrice);
+        }
+
+        // Filter by availability status
+        if (queryParams.availableStatus === "inStock") {
+            filterExpressions.push("available > :zero");
+            expressionAttributeValues[":zero"] = 0;
+        } else if (queryParams.availableStatus === "outOfStock") {
+            filterExpressions.push("available = :zero");
+            expressionAttributeValues[":zero"] = 0;
+        }
+
+        // Filter by minAvailable
+        if (queryParams.minAvailable !== undefined) {
+            filterExpressions.push("available >= :minAvailable");
+            expressionAttributeValues[":minAvailable"] = Number(queryParams.minAvailable);
+        }
+
+        // Decide between Query (with category) and Scan
         if (queryParams.category) {
             const params = {
                 TableName: TABLE_NAME,
                 KeyConditionExpression: "#cat = :category",
-                ExpressionAttributeNames: { "#cat": "category" },
-                ExpressionAttributeValues: { ":category": queryParams.category },
+                ExpressionAttributeNames: expressionAttributeNames,
+                ExpressionAttributeValues: expressionAttributeValues,
             };
 
-            // Filter for availability range
-            const filterExpressions = [];
-            const expressionAttributeValues = { ...params.ExpressionAttributeValues };
-
-            if (queryParams.available === true) filterExpressions.push("available > :minAvailable");
-            if (queryParams.available === false) {
-                filterExpressions.push("available = :zero");
-                expressionAttributeValues[":zero"] = 0;
-            }
-            if (queryParams.minAvailable !== undefined) {
-                filterExpressions.push("available >= :minAvailable");
-                expressionAttributeValues[":minAvailable"] = queryParams.minAvailable;
-            }
-            if (queryParams.maxAvailable !== undefined) {
-                filterExpressions.push("available <= :maxAvailable");
-                expressionAttributeValues[":maxAvailable"] = queryParams.maxAvailable;
-            }
-
-            if (filterExpressions.length > 0) {
-                params.FilterExpression = filterExpressions.join(" AND ");
-                params.ExpressionAttributeValues = expressionAttributeValues;
+            if (filterExpressions.length > 1) {
+                // Exclude category from filter since it's in KeyConditionExpression
+                const otherFilters = filterExpressions.filter(f => f !== "#cat = :category");
+                if (otherFilters.length) params.FilterExpression = otherFilters.join(" AND ");
             }
 
             const result = await docClient.send(new QueryCommand(params));
-            return successResponse(result.Items);
+            items = result.Items || [];
+        } else {
+            // Scan fallback
+            const scanParams = {
+                TableName: TABLE_NAME,
+                ExpressionAttributeNames: Object.keys(expressionAttributeNames).length ? expressionAttributeNames : undefined,
+                ExpressionAttributeValues: Object.keys(expressionAttributeValues).length ? expressionAttributeValues : undefined,
+                FilterExpression: filterExpressions.length ? filterExpressions.join(" AND ") : undefined,
+            };
+
+            const scanResult = await docClient.send(new ScanCommand(scanParams));
+            items = scanResult.Items || [];
         }
 
-        // If no category, fallback to Scan (inefficient, but covers all products)
-        const scanParams = { TableName: TABLE_NAME };
-        const scanResult = await docClient.send(new ScanCommand(scanParams));
-        return successResponse(scanResult.Items);
+        // Apply sorting by createdAt
+        const sortOrder = queryParams.sortOrder || "desc";
+        items.sort((a, b) => {
+            const da = new Date(a.createdAt || 0);
+            const db = new Date(b.createdAt || 0);
+            return sortOrder === "desc" ? db - da : da - db;
+        });
+
+        return successResponse(items);
     } catch (error) {
         console.error("Error listing products:", error);
         return errorResponse(error);

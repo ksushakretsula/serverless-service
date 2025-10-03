@@ -25,8 +25,32 @@
             <!-- Product List -->
             <section class="card product-list">
                 <div class="list-header">
-                    <h2>Products</h2>
-                    <button onclick="listProducts()" class="btn secondary">↻ Refresh</button>
+                    <!-- Heading and actions on the same row -->
+                    <div class="header-row flex-row">
+                        <h2>Products</h2>
+                        <div class="actions flex-row gap-1">
+                            <button id="sortToggle" onclick="toggleSort()" class="btn secondary">Sort: Newest ↓</button>
+                            <button onclick="listProducts()" class="btn secondary">↻ Refresh</button>
+                        </div>
+                    </div>
+
+                    <!-- Filters below heading -->
+                    <div class="filters flex-row gap-1 wrap">
+                        <input type="text" id="filterName" placeholder="Search by Name">
+                        <input type="text" id="filterCategory" placeholder="Filter by Category">
+                        <input type="number" id="filterPriceMin" placeholder="Min Price" inputmode="decimal" oninput="enforceNumeric(this, 2)">
+                        <input type="number" id="filterPriceMax" placeholder="Max Price" inputmode="decimal" oninput="enforceNumeric(this, 2)">
+                        <select id="filterAvailableStatus">
+                            <option value="">All</option>
+                            <option value="inStock">In Stock</option>
+                            <option value="outOfStock">Out of Stock</option>
+                        </select>
+                        <input type="number" id="filterAvailable" placeholder="Min Available" inputmode="decimal" oninput="enforceNumeric(this, 3)">
+                        <div>
+                            <button onclick="listProducts()" class="btn secondary">Apply</button>
+                            <button onclick="resetFilters()" class="btn secondary">Reset</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="products" class="products-container">
                     <div class="loading">

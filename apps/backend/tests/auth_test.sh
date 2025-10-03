@@ -24,23 +24,26 @@ CREATE=$(curl -s -X POST "${API}/products" "${HEADERS[@]}" "${AUTH_HEADER[@]}" \
     -d '{"name": "Auth_Test", "price": 299.5, "category": "Auth", "available": 10}')
 check_error $? "Failed to create product"
 
+CATEGORY=$(echo $CREATE | jq -r '.category')
 ID=$(echo $CREATE | jq -r '.id')
-if [ "$ID" == "null" ] || [ -z "$ID" ]; then
-    echo "Error: Failed to retrieve product ID after creation"
+
+if [ "$ID" == "null" ] || [ -z "$ID" ] || [ "$CATEGORY" == "null" ] || [ -z "$CATEGORY" ]; then
+    echo "Error: Failed to retrieve product keys after creation"
     echo "$CREATE"
     exit 1
 fi
-echo "Created product with ID: $ID"
+
+echo "Created product with Category: $CATEGORY, ID: $ID"
 
 # 3. Retrieve the product
 echo "Retrieving the created product..."
-curl -s "${API}/products/$ID" "${HEADERS[@]}" | jq
+curl -s "${API}/products/$CATEGORY/$ID" "${HEADERS[@]}" | jq
 echo
 
 # 4. Update the product
 echo "Updating the product..."
-curl -s -X PUT "${API}/products/$ID" "${HEADERS[@]}" "${AUTH_HEADER[@]}" \
-    -d '{"name": "Auth_Test new", "price": 15, "category": "Auth updated", "available": 5}' | jq
+curl -s -X PUT "${API}/products/$CATEGORY/$ID" "${HEADERS[@]}" "${AUTH_HEADER[@]}" \
+    -d '{"name": "Auth_Test new", "price": 15, "category": "Auth", "available": 5}' | jq
 echo
 
 # 5. List all products
@@ -50,5 +53,5 @@ echo
 
 # 6. Delete the product
 echo "Deleting the product..."
-curl -s -X DELETE "${API}/products/$ID" "${HEADERS[@]}" "${AUTH_HEADER[@]}" | jq
+curl -s -X DELETE "${API}/products/$CATEGORY/$ID" "${HEADERS[@]}" "${AUTH_HEADER[@]}" | jq
 echo "Product deleted."

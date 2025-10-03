@@ -124,9 +124,9 @@ h2 {
 /* --- Compact form in a row --- */
 .flex-row {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    gap: .75rem;
+    /* gap: .75rem; */
     align-items: center;
 }
 
@@ -288,6 +288,12 @@ h2 {
 }
 
 /* --- Product List --- */
+.products-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .product-list .list-header {
     display: flex;
     justify-content: space-between;
@@ -405,4 +411,168 @@ h2 {
 
 .switch input:checked+.slider::before {
     transform: translateX(21px);
+}
+
+/* --- Filters bar --- */
+.list-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.list-header .filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Filter inputs */
+.list-header .filters input[type="text"],
+.list-header .filters input[type="number"] {
+  height: 40px;
+  min-width: 140px;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: box-shadow .15s ease, border-color .15s ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+}
+
+.list-header .filters input::placeholder {
+  color: #9aa3ad;
+}
+
+/* Focus state */
+.list-header .filters input:focus {
+  border-color: rgba(34,150,243,0.9);
+  box-shadow: 0 6px 18px rgba(34,150,243,0.06);
+}
+
+/* Small icon-ish styling for number input arrows on some browsers */
+.list-header .filters input[type="number"]::-webkit-outer-spin-button,
+.list-header .filters input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Filter buttons */
+.list-header .filters .btn {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform .06s ease, box-shadow .06s ease;
+}
+
+/* Primary / secondary variants (match your existing btn classes if any) */
+.list-header .filters .btn.secondary {
+  background: #f3f6f9;
+  color: #1f2933;
+  border-color: rgba(0,0,0,0.06);
+}
+
+.list-header .filters .btn.primary {
+  background: #2296f3;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(34,150,243,0.12);
+}
+
+/* Hover / active */
+.list-header .filters .btn:hover {
+  transform: translateY(-1px);
+}
+.list-header .filters .btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive: stack filters on small screens */
+@media (max-width: 720px) {
+  .list-header {
+    align-items: stretch;
+  }
+
+  .list-header .filters {
+    width: 100%;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .list-header .filters input[type="text"],
+  .list-header .filters input[type="number"] {
+    flex: 1 1 48%;
+    min-width: 0;
+  }
+
+  .list-header .filters .btn {
+    flex: 1 1 32%;
+    min-width: 0;
+  }
+}
+
+.flex-row {
+    display: flex;
+    align-items: center;
+}
+
+.header-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gap-1 > * + * {
+    margin-left: 0.5rem; /* gap between elements */
+}
+
+.wrap {
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.filters input,
+.filters select {
+    min-width: 120px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* --- Styled Select --- */
+#filterAvailableStatus {
+    height: 40px;
+    min-width: 140px;
+    padding: 0 0.75rem;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background-color: #fff;
+    color: #1f2933;
+    outline: none;
+    appearance: none; /* Remove default arrow in some browsers */
+    background-image: url("data:image/svg+xml,%3Csvg fill='none' stroke='%236c757d' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* Focus state */
+#filterAvailableStatus:focus {
+    border-color: rgba(34,150,243,0.9);
+    box-shadow: 0 6px 18px rgba(34,150,243,0.06);
+}
+
+/* Optional: hover effect */
+#filterAvailableStatus:hover {
+    border-color: rgba(67,97,238,0.5);
+    cursor: pointer;
 }

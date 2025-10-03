@@ -20,8 +20,8 @@ Updates in the project:
     Run test:
 
     ```bash
-    chmod +x ./apps/backend/auth_test.sh
-    ./apps/backend/auth_test.sh
+    chmod +x ./apps/backend/tests/auth_test.sh
+    ./apps/backend/tests/auth_test.sh
     ```
 
     Output should look similar to:
@@ -108,8 +108,8 @@ Updates in the project:
     Run test:
 
     ```bash
-    chmod +x ./apps/backend/query_test.sh
-    ./apps/backend/query_test.sh
+    chmod +x ./apps/backend/tests/query_test.sh
+    ./apps/backend/tests/query_test.sh
     ```
 
     Output should look similar to:
@@ -318,9 +318,9 @@ Updates in the project:
     ]
     ```
 
-5. Integrate Authorizer into frontend
+5. Integrate Authorizer into frontend & add filters
 
-    TODO
+    ![Task 3. Frontend](./media/task_3_frontend.png)
 
 ### Task 2. Product Endpoints
 
@@ -350,9 +350,8 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 A test script is included to quickly verify all endpoints:
 
 ```bash
-cd apps/backend
-chmod +x test.sh
-./test.sh
+chmod +x apps/backend/tests/no_auth_test.sh
+./apps/backend/tests/no_auth_test.sh
 ```
 
 ### Task 1. Hello World Endpoint

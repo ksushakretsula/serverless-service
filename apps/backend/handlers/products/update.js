@@ -1,22 +1,26 @@
 import { UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "../../lib/dynamodb.js";
 import { successResponse, errorResponse } from "../../utils/responses.js";
-import { updateProductSchema, productIdSchema } from "../../validation/productSchemas.js";
+import { updateProductSchema, productKeySchema } from "../../validation/productSchemas.js";
 import { validateBody, validatePathParameters } from "../../utils/validation.js";
 import { getChangedFields } from "../../utils/comparison.js";
 
 const validateUpdateProduct = validateBody(updateProductSchema);
-const validateProductId = validatePathParameters(productIdSchema);
+const validateProductKey = validatePathParameters(productKeySchema);
 
 export const updateProduct = async (event) => {
     try {
-        const { id } = validateProductId(event);
+        const { category, id } = validateProductKey(event);
+
+        if (!id || !category) {
+            return errorResponse({ message: "Both id and category are required" }, 400);
+        }
         const validatedData = validateUpdateProduct(event);
 
         // Check if product exists first
         const existingResult = await docClient.send(new GetCommand({
             TableName: TABLE_NAME,
-            Key: { id },
+            Key: { category, id },
         }));
 
         if (!existingResult.Item) {
@@ -67,7 +71,7 @@ export const updateProduct = async (event) => {
 
         const result = await docClient.send(new UpdateCommand({
             TableName: TABLE_NAME,
-            Key: { id },
+            Key: { category, id },
             UpdateExpression: `set ${updateExpressions.join(', ')}`,
             ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
             ExpressionAttributeValues: expressionAttributeValues,

@@ -47,18 +47,42 @@ export const updateProductSchema = Joi.object({
     'object.min': 'At least one field must be provided for update'
 });
 
-export const productIdSchema = Joi.object({
+export const productKeySchema = Joi.object({
     id: Joi.string().uuid().required().messages({
         'string.guid': 'Product ID must be a valid UUID',
         'any.required': 'Product ID is required'
+    }),
+    category: Joi.string().min(1).required().messages({
+        'string.base': 'Category must be a string',
+        'string.empty': 'Category cannot be empty',
+        'any.required': 'Category is required'
     })
 });
 
 export const queryParamsSchema = Joi.object({
     category: Joi.string().optional(),
-    available: Joi.boolean().optional(),
-    minAvailable: Joi.number().integer().min(0).optional().messages({
-        'number.base': '"minAvailable" must be a number'
+    name: Joi.string().optional(),
+    // Price range
+    minPrice: Joi.number().min(0).optional().messages({
+        "number.base": '"minPrice" must be a number',
+        "number.min": '"minPrice" must be greater than or equal to 0'
     }).prefs({ convert: true }),
-    maxAvailable: Joi.number().min(0).optional()
+    maxPrice: Joi.number().min(0).optional().messages({
+        "number.base": '"maxPrice" must be a number',
+        "number.min": '"maxPrice" must be greater than or equal to 0'
+    }).prefs({ convert: true }),
+    // Availability filters
+    availableStatus: Joi.string().valid("inStock", "outOfStock").optional()
+        .messages({ "any.only": '"availableStatus" must be either "inStock" or "outOfStock"' }),
+    minAvailable: Joi.number().min(0).optional().messages({
+        "number.base": '"minAvailable" must be a number',
+        "number.min": '"minAvailable" must be greater than or equal to 0'
+    }).prefs({ convert: true }),
+    maxAvailable: Joi.number().min(0).optional().messages({
+        "number.base": '"maxAvailable" must be a number',
+        "number.min": '"maxAvailable" must be greater than or equal to 0'
+    }).prefs({ convert: true }),
+    // Sorting
+    sortOrder: Joi.string().valid("asc", "desc").optional()
+        .messages({ "any.only": '"sortOrder" must be either "asc" or "desc"' }),
 });

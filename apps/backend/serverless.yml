@@ -35,16 +35,7 @@ functions:
       - http:
           path: /auth/token
           method: get
-          cors:
-            origin: "http://localhost:3000"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
   hello_world:
     handler: handlers/hello_world.hello_world
     events:
@@ -58,82 +49,37 @@ functions:
           path: products
           method: post
           authorizer: jwtAuthorizer
-          cors:
-            origin: "http://localhost:3000"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
   getProduct:
     handler: handlers/products/get.getProduct
     events:
       - http:
-          path: products/{id}
+          path: products/{category}/{id}
           method: get
-          cors:
-            origin: "http://localhost:3000"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
   updateProduct:
     handler: handlers/products/update.updateProduct
     events:
       - http:
-          path: products/{id}
+          path: products/{category}/{id}
           method: put
           authorizer: jwtAuthorizer
-          cors:
-            origin: "http://localhost:3000"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
   deleteProduct:
     handler: handlers/products/delete.deleteProduct
     events:
       - http:
-          path: products/{id}
+          path: products/{category}/{id}
           method: delete
           authorizer: jwtAuthorizer
-          cors:
-            origin: "http://localhost:3000"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
   listProducts:
     handler: handlers/products/list.listProducts
     events:
       - http:
           path: products
           method: get
-          cors:
-            origin: "http://localhost:3000"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
 
 resources:
   Resources:

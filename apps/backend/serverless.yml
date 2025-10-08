@@ -14,6 +14,7 @@ provider:
   region: us-east-1
   environment:
     PRODUCTS_TABLE: ProductsTableV2
+    ORDERS_TABLE: OrdersTable
     JWT_SECRET: ${env:JWT_SECRET, 'super-secret-jwt-key-change-in-production'}
   iamRoleStatements:
     - Effect: Allow
@@ -24,9 +25,17 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:Query
         - dynamodb:Scan
-      Resource: arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.PRODUCTS_TABLE}
+      Resource:
+        - arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.PRODUCTS_TABLE}
+        - arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.ORDERS_TABLE}
+
+    - Effect: Allow
+      Action:
+        - events:PutEvents
+      Resource: "*"
 
 functions:
+  # --- AUTH ---
   jwtAuthorizer:
     handler: authorizers/jwtAuthorizer.handler
   generateToken:
@@ -36,12 +45,8 @@ functions:
           path: /auth/token
           method: get
           cors: true
-  hello_world:
-    handler: handlers/hello_world.hello_world
-    events:
-      - http:
-          path: hello_world
-          method: get
+
+  # --- PRODUCTS ---
   createProduct:
     handler: handlers/products/create.createProduct
     events:
@@ -81,8 +86,66 @@ functions:
           method: get
           cors: true
 
+  # --- ORDERS ---
+  createOrder:
+    handler: handlers/orders/createOrder.createOrder
+    events:
+      - http:
+          path: orders
+          method: post
+          authorizer: jwtAuthorizer
+          cors: true
+  
+  getOrder:
+    handler: handlers/orders/getOrder.getOrder
+    events:
+      - http:
+          path: orders/{id}
+          method: get
+          cors: true
+
+  updateOrder:
+    handler: handlers/orders/updateOrder.updateOrder
+    events:
+      - http:
+          path: orders/{id}
+          method: put
+          authorizer: jwtAuthorizer
+          cors: true
+
+  deleteOrder:
+    handler: handlers/orders/deleteOrder.deleteOrder
+    events:
+      - http:
+          path: orders/{id}
+          method: delete
+          authorizer: jwtAuthorizer
+          cors: true
+
+  listOrders:
+    handler: handlers/orders/listOrders.listOrders
+    events:
+      - http:
+          path: orders
+          method: get
+          cors: true
+
+  # --- EVENTBRIDGE CONSUMER ---
+  updateProductOnOrder:
+    handler: handlers/orders/updateProductOnOrder.updateProductOnOrder
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - "order.service"
+            detail-type:
+              - "order.created"
+              - "order.updated"
+              - "order.deleted"
+
 resources:
   Resources:
+    # --- PRODUCTS TABLE ---
     ProductsTableV2:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -97,4 +160,17 @@ resources:
             KeyType: HASH
           - AttributeName: id       # Sort key
             KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+
+    # --- ORDERS TABLE ---
+    OrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: OrdersTable
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id # Partition key (simple key)
+            KeyType: HASH
         BillingMode: PAY_PER_REQUEST

@@ -3,4 +3,5 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient();
 export const docClient = DynamoDBDocumentClient.from(client);
-export const TABLE_NAME = process.env.PRODUCTS_TABLE;
+export const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE;
+export const ORDERS_TABLE = process.env.ORDERS_TABLE;

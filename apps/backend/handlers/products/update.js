@@ -1,7 +1,7 @@
 import { UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { docClient, TABLE_NAME } from "../../lib/dynamodb.js";
+import { docClient, PRODUCTS_TABLE } from "../../lib/dynamodb.js";
 import { successResponse, errorResponse } from "../../utils/responses.js";
-import { updateProductSchema, productKeySchema } from "../../validation/productSchemas.js";
+import { updateProductSchema, productKeySchema } from "../../utils/validationSchemas/productSchemas.js";
 import { validateBody, validatePathParameters } from "../../utils/validation.js";
 import { getChangedFields } from "../../utils/comparison.js";
 
@@ -19,7 +19,7 @@ export const updateProduct = async (event) => {
 
         // Check if product exists first
         const existingResult = await docClient.send(new GetCommand({
-            TableName: TABLE_NAME,
+            TableName: PRODUCTS_TABLE,
             Key: { category, id },
         }));
 
@@ -70,7 +70,7 @@ export const updateProduct = async (event) => {
         expressionAttributeValues[':u'] = new Date().toISOString();
 
         const result = await docClient.send(new UpdateCommand({
-            TableName: TABLE_NAME,
+            TableName: PRODUCTS_TABLE,
             Key: { category, id },
             UpdateExpression: `set ${updateExpressions.join(', ')}`,
             ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,

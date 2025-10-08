@@ -1,7 +1,7 @@
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
-import { docClient, TABLE_NAME } from "../../lib/dynamodb.js";
+import { docClient, PRODUCTS_TABLE } from "../../lib/dynamodb.js";
 import { successResponse, errorResponse } from "../../utils/responses.js";
-import { productKeySchema } from "../../validation/productSchemas.js";
+import { productKeySchema } from "../../utils/validationSchemas/productSchemas.js";
 import { validatePathParameters } from "../../utils/validation.js";
 
 const validateProductKey = validatePathParameters(productKeySchema);
@@ -15,7 +15,7 @@ export const getProduct = async (event) => {
         }
 
         const result = await docClient.send(new GetCommand({
-            TableName: TABLE_NAME,
+            TableName: PRODUCTS_TABLE,
             Key: { category, id },
         }));
 

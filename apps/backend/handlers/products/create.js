@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
-import { docClient, TABLE_NAME } from "../../lib/dynamodb.js";
+import { docClient, PRODUCTS_TABLE } from "../../lib/dynamodb.js";
 import { successResponse, errorResponse } from "../../utils/responses.js";
-import { createProductSchema } from "../../validation/productSchemas.js";
+import { createProductSchema } from "../../utils/validationSchemas/productSchemas.js";
 import { validateBody } from "../../utils/validation.js";
 
 const validateCreateProduct = validateBody(createProductSchema);
@@ -21,7 +21,7 @@ export const createProduct = async (event) => {
             updatedAt: new Date().toISOString()
         };
 
-        await docClient.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));
+        await docClient.send(new PutCommand({ TableName: PRODUCTS_TABLE, Item: item }));
 
         return successResponse(item, 201);
     } catch (error) {

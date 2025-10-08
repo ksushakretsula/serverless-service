@@ -9,6 +9,48 @@ A simple Serverless Framework project with AWS Lambda. The service includes a `h
 
 ## Usage
 
+### Task 4. EventBridge
+
+The Orders module (./apps/backend/habdlers/orders) is integrated with AWS EventBridge to ensure that any change in order state (creation, update, or deletion) automatically synchronizes product stock levels in the Products table.
+
+To test this run:
+
+```bash
+chmod +x ./apps/backend/tests/order_test.sh
+./apps/backend/tests/order_test.sh
+```
+
+Output should look similar to:
+
+```text
+Fetching JWT token...
+Populating test products...
+Created product: name=Test_Product1 id=c1e4e7d2-fe62-4e26-b965-c417bf180ae1 category=Test
+Created product: name=Test_Product2 id=14b50c20-7910-4d8f-ab74-24c01c9a85fb category=Test
+
+Created product IDs:
+c1e4e7d2-fe62-4e26-b965-c417bf180ae1
+14b50c20-7910-4d8f-ab74-24c01c9a85fb
+
+Recording original stock...
+
+Creating orders...
+Stock updated correctly for Test:c1e4e7d2-fe62-4e26-b965-c417bf180ae1 after create (0)
+Stock updated correctly for Test:14b50c20-7910-4d8f-ab74-24c01c9a85fb after create (0)
+
+Updating first order quantity...
+Before update - order quantity: 1, product stock: 0
+Update failed as expected (HTTP 400). Verifying no changes to order and stock...
+Update response: {"error":"Internal Server Error"}
+OK: Order quantity unchanged (1)
+OK: Product stock unchanged (0)
+
+Deleting orders...
+Stock restored correctly for Test:c1e4e7d2-fe62-4e26-b965-c417bf180ae1 after delete (1)
+Stock restored correctly for Test:14b50c20-7910-4d8f-ab74-24c01c9a85fb after delete (3)
+Order tests completed successfully!
+```
+
 ### Task 3. Validation & Authorization
 
 Updates in the project:

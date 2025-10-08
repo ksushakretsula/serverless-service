@@ -1,7 +1,7 @@
 import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
-import { docClient, TABLE_NAME } from "../../lib/dynamodb.js";
+import { docClient, PRODUCTS_TABLE } from "../../lib/dynamodb.js";
 import { successResponse, errorResponse } from "../../utils/responses.js";
-import { queryParamsSchema } from "../../validation/productSchemas.js";
+import { queryParamsSchema } from "../../utils/validationSchemas/productSchemas.js";
 import { validateQueryParameters } from "../../utils/validation.js";
 
 const validateQueryParams = validateQueryParameters(queryParamsSchema);
@@ -57,7 +57,7 @@ export const listProducts = async (event) => {
         // Decide between Query (with category) and Scan
         if (queryParams.category) {
             const params = {
-                TableName: TABLE_NAME,
+                TableName: PRODUCTS_TABLE,
                 KeyConditionExpression: "#cat = :category",
                 ExpressionAttributeNames: expressionAttributeNames,
                 ExpressionAttributeValues: expressionAttributeValues,
@@ -74,7 +74,7 @@ export const listProducts = async (event) => {
         } else {
             // Scan fallback
             const scanParams = {
-                TableName: TABLE_NAME,
+                TableName: PRODUCTS_TABLE,
                 ExpressionAttributeNames: Object.keys(expressionAttributeNames).length ? expressionAttributeNames : undefined,
                 ExpressionAttributeValues: Object.keys(expressionAttributeValues).length ? expressionAttributeValues : undefined,
                 FilterExpression: filterExpressions.length ? filterExpressions.join(" AND ") : undefined,

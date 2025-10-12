@@ -85,6 +85,23 @@ functions:
           path: products
           method: get
           cors: true
+  # --- PRODUCT CATEGORIES ---
+  categoryAggregator:
+    handler: handlers/products/categories/categoryAggregator.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - ProductsTableV2
+              - StreamArn
+  getCategoryAggregate:
+    handler: handlers/products/categories/getCategory.getCategoryAggregate
+    events:
+      - http:
+          path: categories/{category}
+          method: get
+          cors: true
 
   # --- ORDERS ---
   createOrder:
@@ -161,6 +178,8 @@ resources:
           - AttributeName: id       # Sort key
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
 
     # --- ORDERS TABLE ---
     OrdersTable:

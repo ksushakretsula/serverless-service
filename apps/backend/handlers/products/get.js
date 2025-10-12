@@ -1,6 +1,6 @@
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, PRODUCTS_TABLE } from "../../lib/dynamodb.js";
-import { successResponse, errorResponse } from "../../utils/responses.js";
+import { successResponse, errorResponse, notFoundResponse } from "../../utils/responses.js";
 import { productKeySchema } from "../../utils/validationSchemas/productSchemas.js";
 import { validatePathParameters } from "../../utils/validation.js";
 
@@ -12,6 +12,11 @@ export const getProduct = async (event) => {
 
         if (!id || !category) {
             return errorResponse({ message: "Both id and category are required" }, 400);
+        }
+
+        // Prevent fetching the aggregate via this endpoint
+        if (id === "CATEGORY") {
+            return errorResponse({ message: "Use the /categories/{category} endpoint to fetch category aggregates" }, 400);
         }
 
         const result = await docClient.send(new GetCommand({

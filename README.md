@@ -9,6 +9,141 @@ A simple Serverless Framework project with AWS Lambda. The service includes a `h
 
 ## Usage
 
+### Task 5. One table & DynamoDB Stream
+
+This task implements automatic category aggregation for products using a single DynamoDB table and stream-based updates.
+
+- Products and category aggregates are stored in one DynamoDB table (`PRODUCTS_TABLE`),
+  distinguished by the `id` attribute:
+
+  - Regular product: `{ id: <UUID>, category: <string> }`
+  - Category aggregate: `{ id: "CATEGORY", category: <string> }`
+
+- The DynamoDB Stream on `PRODUCTS_TABLE` invokes `categoryAggregator.js` whenever a product is created, updated, or deleted.
+
+- The aggregator automatically:
+
+  - Recomputes the total product availability per category
+  - Maintains a list of product IDs (`productIDs`)
+  - Creates or deletes category aggregates as needed
+
+- Only the GET endpoint (`getCategory.js`) is exposed via API Gateway — category creation, updates, and deletions are handled internally.
+
+`apps/backend/handlers/products/categories` directory structure:
+
+```bash
+/categories
+ ├── createCategory.js     # internal use only
+ ├── updateCategory.js     # internal use only
+ ├── deleteCategory.js     # internal use only
+ ├── getCategory.js        # exposed via API Gateway
+ └── categoryAggregator.js # triggers updates via DynamoDB Stream
+```
+
+Run the automated test script to verify full stream integration:
+
+```bash
+chmod +x ./apps/backend/tests/stream_test.sh
+./apps/backend/tests/stream_test.sh
+```
+
+This script:
+
+- Populates the table with test products across multiple categories
+- Triggers the DynamoDB Stream to generate or update corresponding category aggregates
+- Verifies that category aggregates correctly reflect product changes (additions, updates, deletions)
+- Ensures category entries are automatically removed when all related products are deleted
+
+Output should look similar to:
+
+```text
+Fetching JWT token...
+Populating test products...
+Created product: name=Auth_Test1 id=e9bd8e5e-5ae1-441f-971b-f089acc7e2cc category=Auth
+Created product: name=Auth_Test2 id=c8ad576b-baf8-474f-abc6-83bcbdbe72a8 category=Auth
+Created product: name=Test_Product1 id=553f7788-6c59-45ef-bffe-30a142449c67 category=Test
+Created product: name=Test_Product2 id=d52c4d89-db79-4ae8-8f5a-1207adeebb33 category=Test
+Created product: name=Test_Query id=ede112f2-694f-4a2e-b185-aca4c2b7e5d9 category=Query
+
+Checking category aggregate for 'Auth'...
+Category aggregate found:
+   totalAvailability: 6
+   productIDs: [c8ad576b-baf8-474f-abc6-83bcbdbe72a8, e9bd8e5e-5ae1-441f-971b-f089acc7e2cc]
+
+Checking category aggregate for 'Test'...
+Category aggregate found:
+   totalAvailability: 4
+   productIDs: [553f7788-6c59-45ef-bffe-30a142449c67, d52c4d89-db79-4ae8-8f5a-1207adeebb33]
+
+Checking category aggregate for 'Query'...
+Category aggregate found:
+   totalAvailability: 2
+   productIDs: [ede112f2-694f-4a2e-b185-aca4c2b7e5d9]
+
+Created product IDs:
+e9bd8e5e-5ae1-441f-971b-f089acc7e2cc
+c8ad576b-baf8-474f-abc6-83bcbdbe72a8
+553f7788-6c59-45ef-bffe-30a142449c67
+d52c4d89-db79-4ae8-8f5a-1207adeebb33
+ede112f2-694f-4a2e-b185-aca4c2b7e5d9
+
+Recording original stock...
+
+Creating orders...
+Stock updated correctly for Test:553f7788-6c59-45ef-bffe-30a142449c67 after create (0)
+Stock updated correctly for Test:d52c4d89-db79-4ae8-8f5a-1207adeebb33 after create (0)
+
+
+Checking category aggregate for 'Test'...
+Category aggregate found:
+   totalAvailability: 0
+   productIDs: [553f7788-6c59-45ef-bffe-30a142449c67, d52c4d89-db79-4ae8-8f5a-1207adeebb33]
+
+Updating first order quantity...
+Before update - order quantity: 1, product stock: 0
+Update failed as expected (HTTP 400). Verifying no changes to order and stock...
+Update response: {"error":"Internal Server Error"}
+OK: Order quantity unchanged (1)
+OK: Product stock unchanged (0)
+
+
+Checking category aggregate for 'Test'...
+Category aggregate found:
+   totalAvailability: 0
+   productIDs: [553f7788-6c59-45ef-bffe-30a142449c67, d52c4d89-db79-4ae8-8f5a-1207adeebb33]
+
+Deleting orders...
+Stock restored correctly for Test:553f7788-6c59-45ef-bffe-30a142449c67 after delete (1)
+Stock restored correctly for Test:d52c4d89-db79-4ae8-8f5a-1207adeebb33 after delete (3)
+
+
+Checking category aggregate for 'Test'...
+Category aggregate found:
+   totalAvailability: 4
+   productIDs: [553f7788-6c59-45ef-bffe-30a142449c67, d52c4d89-db79-4ae8-8f5a-1207adeebb33]
+
+Deleting 2 products from different categories...
+Deleting product 553f7788-6c59-45ef-bffe-30a142449c67 from category Test...
+Product deleted successfully
+Deleting product ede112f2-694f-4a2e-b185-aca4c2b7e5d9 from category Query...
+Product deleted successfully
+
+Final category aggregates:
+
+Checking category aggregate for 'Auth'...
+Category aggregate found:
+   totalAvailability: 6
+   productIDs: [c8ad576b-baf8-474f-abc6-83bcbdbe72a8, e9bd8e5e-5ae1-441f-971b-f089acc7e2cc]
+
+Checking category aggregate for 'Test'...
+Category aggregate found:
+   totalAvailability: 3
+   productIDs: [d52c4d89-db79-4ae8-8f5a-1207adeebb33]
+
+Checking category aggregate for 'Query'...
+Category aggregate not found for 'Query'
+```
+
 ### Task 4. EventBridge
 
 The Orders module (./apps/backend/habdlers/orders) is integrated with AWS EventBridge to ensure that any change in order state (creation, update, or deletion) automatically synchronizes product stock levels in the Products table.

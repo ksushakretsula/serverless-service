@@ -48,15 +48,23 @@ export const updateProductSchema = Joi.object({
 });
 
 export const productKeySchema = Joi.object({
-    id: Joi.string().uuid().required().messages({
-        'string.guid': 'Product ID must be a valid UUID',
-        'any.required': 'Product ID is required'
+  id: Joi.alternatives()
+    .try(
+      Joi.string().uuid().messages({
+        'string.guid': 'Product ID must be a valid UUID'
+      }),
+      Joi.string().valid('CATEGORY')
+    )
+    .required()
+    .messages({
+      'any.required': 'Product ID is required',
+      'any.only': 'Product ID must be a valid UUID or "CATEGORY"'
     }),
-    category: Joi.string().min(1).required().messages({
-        'string.base': 'Category must be a string',
-        'string.empty': 'Category cannot be empty',
-        'any.required': 'Category is required'
-    })
+  category: Joi.string().min(1).required().messages({
+    'string.base': 'Category must be a string',
+    'string.empty': 'Category cannot be empty',
+    'any.required': 'Category is required'
+  })
 });
 
 export const queryParamsSchema = Joi.object({
